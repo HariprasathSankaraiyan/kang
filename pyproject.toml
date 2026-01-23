@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kang"
+version = "0.1.0"
+description = "Bitemporal fact storage"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "psycopg2-binary>=2.9"
+]
+
+[tool.setuptools.packages.find]
+include = ["kang*"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0"
+]
