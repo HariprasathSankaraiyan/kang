@@ -14,14 +14,32 @@ Python library for bitemporal fact storage with audit trail, **inspired by [vert
 ## table of contents
 
 - [the problem](#the-problem)
+  - [example: cricket match scoring](#example-cricket-match-scoring)
 - [installation](#installation)
+  - [1. install package](#1-install-package)
+  - [2. initialize schema](#2-initialize-schema)
+  - [3. use in code](#3-use-in-code)
 - [schema](#schema)
 - [quick start](#quick-start)
 - [core concepts](#core-concepts)
+  - [granular facts](#granular-facts)
+  - [business time and transaction time](#business-time-and-transaction-time)
+  - [the `at` field](#the-at-field)
+  - [deduplication behavior](#deduplication-behavior)
 - [methods](#methods)
+  - [`add_fact(fact, business_time=None)`](#add_factfact-business_timenone)
+  - [`add_facts(facts, business_time=None)`](#add_factsfacts-business_timenone)
+  - [`get_facts(kang_id, upto=None, with_tx=False)`](#get_factskang_id-uptonone-with_txfalse)
+  - [`rollup(kang_id, with_nils=False)`](#rollupkang_id-with_nilsfalse)
+  - [`as_of(kang_id, time, with_nils=False)`](#as_ofkang_id-time-with_nilsfalse)
 - [advanced usage](#advanced-usage)
-- [connection](#connection)
+  - [transaction metadata (`with_tx`)](#transaction-metadata-with_tx)
+  - [nil values (`with_nils`)](#nil-values-with_nils)
+  - [time range filtering (`upto`)](#time-range-filtering-upto)
+- [database connection](#database-connection)
 - [error handling](#error-handling)
+- [dependencies](#dependencies)
+- [extending to other databases](#extending-to-other-databases)
 
 ---
 
@@ -49,7 +67,7 @@ imagine tracking a live cricket match:
 - scoring official corrects runs from 87 to 88 (wide ball was missed)
 - you need to answer: "what was the score at 14:30?"
 
-### the solution
+**the solution:**
 
 kang tracks **when facts were true** (business time) while keeping an audit trail of when you recorded them (transaction time):
 
@@ -229,6 +247,34 @@ state_at_14_30 = store.as_of(match_id, "2025-01-15T14:30:00")
 ---
 ## core concepts
 
+### granular facts
+
+facts in kang are **granular**—you only record the specific attributes that changed, not full snapshots.
+
+```python
+# ❌ Don't do this (full snapshot)
+store.add_fact(
+    {"kang_id": match_id, "runs": 88, "wickets": 2, "overs": 15, "team": "IND"},
+    business_time="2025-01-15T14:30:00"
+)
+
+# ✅ Do this (only what changed)
+store.add_fact(
+    {"kang_id": match_id, "runs": 88},  # Only runs changed
+    business_time="2025-01-15T14:30:00"
+)
+```
+
+**why?**
+
+1. **storage efficiency**: only changed values are stored
+2. **semantic clarity**: the fact clearly indicates "runs changed to 88"
+3. **rollup works**: `rollup()` merges all facts, latest value wins per attribute
+
+when you call `rollup()` or `as_of()`, kang automatically merges all granular facts to give you the complete state.
+
+---
+
 ### business time and transaction time
 
 kang **stores** both times but **queries only on business time**:
@@ -358,34 +404,6 @@ store.add_fact(
 ```
 
 > **note**: this is the correction scenario—the original score of 87 and corrected score of 88 both exist at 14:30.
-
----
-
-### granular facts
-
-facts in kang are **granular**—you only record the specific attributes that changed, not full snapshots.
-
-```python
-# ❌ Don't do this (full snapshot)
-store.add_fact(
-    {"kang_id": match_id, "runs": 88, "wickets": 2, "overs": 15, "team": "IND"},
-    business_time="2025-01-15T14:30:00"
-)
-
-# ✅ Do this (only what changed)
-store.add_fact(
-    {"kang_id": match_id, "runs": 88},  # Only runs changed
-    business_time="2025-01-15T14:30:00"
-)
-```
-
-**why?**
-
-1. **storage efficiency**: only changed values are stored
-2. **semantic clarity**: the fact clearly indicates "runs changed to 88"
-3. **rollup works**: `rollup()` merges all facts, latest value wins per attribute
-
-when you call `rollup()` or `as_of()`, kang automatically merges all granular facts to give you the complete state.
 
 ---
 
@@ -659,7 +677,7 @@ state = store.as_of(match_id, "2025-01-15T14:30:00")
 - **incremental processing**: "give me facts since last sync"
 - **debugging**: "which facts contributed to this state?"
 
-## connection
+## database connection
 
 FactStore accepts either a database URL or a connection pool:
 

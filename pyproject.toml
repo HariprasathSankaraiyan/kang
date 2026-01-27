@@ -8,9 +8,16 @@ version = "0.1.0"
 description = "Bitemporal fact storage"
 readme = "README.md"
 requires-python = ">=3.8"
+authors = [
+    {name = "Hariprasath Sankaraiyan"}
+]
+license = {text = "MIT"}
 dependencies = [
     "psycopg2-binary>=2.9"
 ]
+
+[project.urls]
+Repository = "https://github.com/HariprasathSankaraiyan/kang"
 
 [tool.setuptools.packages.find]
 include = ["kang*"]
