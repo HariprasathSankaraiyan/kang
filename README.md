@@ -1,6 +1,6 @@
 # Kang - Bitemporal Fact Storage
 
-<img src="images/kang.jpg" alt="Kang" width="200"/>
+<img src="https://raw.githubusercontent.com/HariprasathSankaraiyan/kang/main/images/kang.jpg" alt="Kang" width="200"/>
 
 Python library for bitemporal fact storage with audit trail, **inspired by [verter](https://github.com/tolitius/verter)**.
 
