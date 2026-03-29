@@ -220,8 +220,3 @@ class FamilySupport:
         history.sort(key=lambda x: (x["business_time"], x["tx_time"]))
 
         return history
-
-
-
-
-
