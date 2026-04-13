@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kang"
-version = "0.1.3"
+version = "0.1.4"
 description = "Bitemporal fact storage"
 readme = "README.md"
 requires-python = ">=3.8"
